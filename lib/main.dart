@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
             );
           } else {
             if (snapshot.data == true) {
-              return SuccessPage(credentialsList: []);
+              return SuccessPage();
             } else {
               return MainPage();
             }
@@ -65,6 +65,10 @@ class _MainPageState extends State<MainPage> {
     if (credentials != null) {
       setState(() {
         _credentialsList = List<Map<String, String>>.from(json.decode(credentials));
+        if (_credentialsList.isNotEmpty) {
+          _loginUsernameController.text = _credentialsList[0]['username'] ?? '';
+          _loginPasswordController.text = _credentialsList[0]['password'] ?? '';
+        }
       });
     }
   }
@@ -72,10 +76,12 @@ class _MainPageState extends State<MainPage> {
   void _login() async {
     if (_formKey.currentState?.validate() ?? false) {
       bool isValid = false;
+      Map<String, String>? loggedInUser;
       for (var credentials in _credentialsList) {
         if (credentials['username'] == _loginUsernameController.text &&
             credentials['password'] == _loginPasswordController.text) {
           isValid = true;
+          loggedInUser = credentials;
           break;
         }
       }
@@ -83,9 +89,11 @@ class _MainPageState extends State<MainPage> {
       if (isValid) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
+        await prefs.setString('loggedInUser', json.encode(loggedInUser));
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => SuccessPage(credentialsList: _credentialsList)),
+          MaterialPageRoute(builder: (context) => SuccessPage()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +120,9 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue,
-      
+      appBar: AppBar(
+        title: Text('Login Page'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

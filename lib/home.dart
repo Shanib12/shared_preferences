@@ -1,15 +1,39 @@
+import 'package:auto_login_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
-class SuccessPage extends StatelessWidget {
-  final List<Map<String, String>> credentialsList;
+class SuccessPage extends StatefulWidget {
+  @override
+  _SuccessPageState createState() => _SuccessPageState();
+}
 
-  SuccessPage({required this.credentialsList});
+class _SuccessPageState extends State<SuccessPage> {
+  Map<String, String>? _loggedInUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLoggedInUser();
+  }
+
+  void _loadLoggedInUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? loggedInUser = prefs.getString('loggedInUser');
+    if (loggedInUser != null) {
+      setState(() {
+        _loggedInUser = Map<String, String>.from(json.decode(loggedInUser));
+      });
+    }
+  }
 
   Future<void> _signOut(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', false);
-    Navigator.popUntil(context, (route) => route.isFirst);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MyApp()),
+    );
   }
 
   @override
@@ -50,21 +74,17 @@ class SuccessPage extends StatelessWidget {
                 style: TextStyle(fontSize: 30),
               ),
               SizedBox(height: 16),
-              ...credentialsList.map((credentials) {
-                return Column(
-                  children: [
-                    Text(
-                      'Username: ${credentials['username']}',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      'Password: ${credentials['password']}',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    SizedBox(height: 16),
-                  ],
-                );
-              }).toList(),
+              if (_loggedInUser != null) ...[
+                Text(
+                  'Username: ${_loggedInUser!['username']}',
+                  style: TextStyle(fontSize: 18),
+                ),
+                Text(
+                  'Password: ${_loggedInUser!['password']}',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 16),
+              ],
             ],
           ),
         ),
